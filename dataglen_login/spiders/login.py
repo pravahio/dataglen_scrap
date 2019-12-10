@@ -31,5 +31,6 @@ class LoginSpider(scrapy.Spider):
     def json_scrap(self, response):
         jsonresponse = json.loads(response.body)
         yield {'plant_name': jsonresponse['plant_name'],
-               'plant_slug':jsonresponse['plant_slug']
+               'plant_slug':jsonresponse['plant_slug'],
+               'longitude':jsonresponse['longitude']
                }
