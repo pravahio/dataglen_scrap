@@ -13,8 +13,8 @@ class LoginSpider(scrapy.Spider):
         csrf_token = response.xpath('//*[@name = "csrfmiddlewaretoken"]/@value').extract_first()
         yield FormRequest('https://dataglen.com/api-auth/login/',
                           formdata = {'csrfmiddlewaretoken': csrf_token,
-                                      'username': 'solaripgcl@gmail.com',
-                                      'password': 'solari123'},
+                                      'username': '******', # login
+                                      'password': '******'}, #password
                           callback = self.start_scraping)
 
     def start_scraping(self, response):
