@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pip3 install mesh-solar-power-production
 import scrapy
 import json
 import os
