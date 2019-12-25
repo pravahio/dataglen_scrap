@@ -8,17 +8,15 @@ import time
 import logging
 
 from mesh_solar_power_production.main import *
+from mesh_solar_power_production.defaults import State
 from mesh_solar_power_production import MeshRPCException
 
-from twisted.internet import reactor
 from scrapy.http import FormRequest, Request
 from scrapy.exceptions import DontCloseSpider
-from scrapy.crawler import CrawlerRunner
 from scrapy import signals
-from scrapy.utils.log import configure_logging
 
-class LoginSpider(scrapy.Spider):
-    name = 'login'
+class DataglenSpider(scrapy.Spider):
+    name = 'dataglen'
     download_delay = 0.3
     allowed_domains = ['dataglen.com']
     start_urls = ['https://dataglen.com/api-auth/login/']
@@ -38,7 +36,7 @@ class LoginSpider(scrapy.Spider):
     
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
-        spider = super(LoginSpider, cls).from_crawler(crawler, *args, **kwargs)
+        spider = super(DataglenSpider, cls).from_crawler(crawler, *args, **kwargs)
         crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
         return spider
 
@@ -87,6 +85,12 @@ class LoginSpider(scrapy.Spider):
             },
             'timestamp': int(timestamp.timestamp())
         }
+
+        if 'status' in json_response:
+            if json_response['status'] == 'connected':
+                station['status'] = State.CONNECTED
+            elif json_response['status'] == 'disconnected':
+                station['status'] = State.DISCONNECTED
 
         if len(gen_today) > 0:
             station['powerGenerationParameters']['powerGeneratedToday'] = gen_today[0]
@@ -177,16 +181,3 @@ class LoginSpider(scrapy.Spider):
         for req in self.parse_form(None):
             self.crawler.engine.schedule(req, spider)
         raise DontCloseSpider
-
-
-def main():
-    configure_logging()
-    runner = CrawlerRunner()
-
-    d = runner.crawl(LoginSpider)
-    d.addBoth(lambda _: reactor.stop())
-    reactor.run()
-    
-
-if '__main__' == __name__:
-    main()

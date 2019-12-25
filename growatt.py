@@ -10,12 +10,9 @@ import logging
 from mesh_solar_power_production.main import *
 from mesh_solar_power_production import MeshRPCException
 
-from twisted.internet import reactor
 from scrapy.http import FormRequest, Request
 from scrapy.exceptions import DontCloseSpider
-from scrapy.crawler import CrawlerRunner
 from scrapy import signals
-from scrapy.utils.log import configure_logging
 
 class GrowattSpider(scrapy.Spider):
     name = 'growatt'
@@ -85,7 +82,7 @@ class GrowattSpider(scrapy.Spider):
             print(plant_id)
 
             timestamp = datetime.datetime.strptime(d['time'], '%Y-%m-%d %H:%M:%S')
-            if float(d['pac']) == 0.0:
+            if float(d['etoday']) == 0.0:
                 continue
             inv = {
                 'id': d['uId'],
