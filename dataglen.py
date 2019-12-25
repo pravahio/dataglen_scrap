@@ -88,9 +88,13 @@ class DataglenSpider(scrapy.Spider):
 
         if 'status' in json_response:
             if json_response['status'] == 'connected':
-                station['status'] = State.CONNECTED
+                station['status'] = {
+                    'state': State.CONNECTED
+                }
             elif json_response['status'] == 'disconnected':
-                station['status'] = State.DISCONNECTED
+                station['status'] = {
+                    'state': State.DISCONNECTED
+                }
 
         if len(gen_today) > 0:
             station['powerGenerationParameters']['powerGeneratedToday'] = gen_today[0]
@@ -122,6 +126,16 @@ class DataglenSpider(scrapy.Spider):
                 },
                 'timestamp': int(timestamp.timestamp())
             }
+
+            if inv['connected'] == 'disconnected':
+                inv_obj['status'] = {
+                    'state': State.DISCONNECTED
+                }
+            else:
+                inv_obj['status'] = {
+                    'state': State.CONNECTED
+                }
+
             inverter_list.append(inv_obj)
         
         station = response.meta['station']
