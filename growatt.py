@@ -8,6 +8,7 @@ import time
 import logging
 
 from mesh_solar_power_production.main import *
+from mesh_solar_power_production.defaults import State
 from mesh_solar_power_production import MeshRPCException
 
 from scrapy.http import FormRequest, Request
@@ -79,7 +80,7 @@ class GrowattSpider(scrapy.Spider):
 
         for d in jsonResponse['obj']['pagers'][0]['datas']:
             plant_id = d['plantId']
-            print(plant_id)
+            #print(plant_id)
 
             timestamp = datetime.datetime.strptime(d['time'], '%Y-%m-%d %H:%M:%S')
             if float(d['etoday']) == 0.0:
@@ -95,6 +96,15 @@ class GrowattSpider(scrapy.Spider):
                 },
                 'timestamp': int(timestamp.timestamp())
             }
+
+            if d['status'] == '0' or d['status'] == '-1':
+                inv['status'] = {
+                    'state': State.DISCONNECTED
+                }
+            elif d['status'] == '1':
+                inv['status'] = {
+                    'state': State.CONNECTED
+                }
             
             if plant_id in plantSet:
                 plantSet[plant_id].append(inv)
@@ -127,12 +137,23 @@ class GrowattSpider(scrapy.Spider):
         stations = []
 
         for station_id, inv_details in ps.items():
+            station_status = {
+                'state': State.DISCONNECTED
+            }
+            for inv in inv_details:
+                if inv['status'] == State.CONNECTED:
+                    station_status = {
+                        'state': State.CONNECTED
+                    }
+                    break
+
             stations.append({
                 'id': station_id,
                 'info': {
                     'name': pn[station_id]
                 },
-                'inverterList': inv_details
+                'inverterList': inv_details,
+                'status': station_status
             })
         
         message = {
@@ -157,16 +178,3 @@ class GrowattSpider(scrapy.Spider):
         for req in self.start_scraping(None):
             self.crawler.engine.schedule(req, spider)
         raise DontCloseSpider
-
-
-def main():
-    configure_logging()
-    runner = CrawlerRunner()
-
-    d = runner.crawl(GrowattSpider)
-    d.addBoth(lambda _: reactor.stop())
-    reactor.run()
-    
-
-if '__main__' == __name__:
-    main()
